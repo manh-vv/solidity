@@ -261,7 +261,7 @@ struct ExpressionAnnotation: ASTAnnotation
 	/// that is called, used for overload resolution
 	std::optional<FuncCallArguments> arguments;
 
-	/// If expression references a function this says if it was called directly or only accessed
+	/// True if the expression references a known function which is called directly instead of being stored or processed.
 	bool calledDirectly = false;
 };
 

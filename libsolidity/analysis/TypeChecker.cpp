@@ -2303,15 +2303,14 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 		functionType = dynamic_cast<FunctionType const*>(expressionType);
 		funcCallAnno.kind = FunctionCallKind::FunctionCall;
 
+		if (auto memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
 		{
-			FunctionDefinition const* expressionDeclaration = nullptr;
-
-			if (auto memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
-				expressionDeclaration = dynamic_cast<FunctionDefinition const*>(memberAccess->annotation().referencedDeclaration);
-			else if (auto identifier = dynamic_cast<Identifier const*>(&_functionCall.expression()))
-				expressionDeclaration = dynamic_cast<FunctionDefinition const*>(identifier->annotation().referencedDeclaration);
-
-			if (expressionDeclaration)
+			if (dynamic_cast<FunctionDefinition const*>(memberAccess->annotation().referencedDeclaration))
+				_functionCall.expression().annotation().calledDirectly = true;
+		}
+		else if (auto identifier = dynamic_cast<Identifier const*>(&_functionCall.expression()))
+		{
+			if (dynamic_cast<FunctionDefinition const*>(identifier->annotation().referencedDeclaration))
 				_functionCall.expression().annotation().calledDirectly = true;
 		}
 
