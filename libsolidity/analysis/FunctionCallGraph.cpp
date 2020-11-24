@@ -88,9 +88,9 @@ bool FunctionCallGraphBuilder::visit(Identifier const& _identifier)
 
 		if (!m_graph->edges.count(callable))
 		{
-			// Create edge to creation dispatch (possibly will be removed if
-			// function is called in FunctionCall visitor)
-			m_graph->edges.emplace(m_currentDispatch);
+			// Create edge to creation dispatch
+			if (!_identifier.annotation().calledDirectly)
+				add(m_currentDispatch, callable);
 			visitCallable(callable);
 		}
 
@@ -141,26 +141,23 @@ bool FunctionCallGraphBuilder::visit(MemberAccess const& _memberAccess)
 				return true;
 
 		if (!m_graph->edges.count(callable))
+		{
+			// Create edge to creation dispatch
+			if (!_memberAccess.annotation().calledDirectly)
+				add(m_currentDispatch, callable);
 			visitCallable(callable);
+		}
 	}
 
 	return true;
 }
 
-bool FunctionCallGraphBuilder::visit(FunctionCall const& _functionCall)
+void FunctionCallGraphBuilder::endVisit(FunctionCall const& _functionCall)
 {
-	_functionCall.expression().accept(*this);
-	FunctionCall::listAccept(_functionCall.arguments(), *this);
-
 	auto& functionType = dynamic_cast<FunctionType const&>(*_functionCall.expression().annotation().type);
 
-	if (functionType.hasDeclaration())
-	auto [begin, end] = m_graph->edges.equal_range(m_currentDispatch);
-
-	while (begin != end)
-		if (dynamic_cast<FunctionDefinition const*>(begin->second)->annotation().type
-
-	return false;
+	if (!functionType.hasDeclaration())
+		add(m_currentDispatch, &_functionCall);
 }
 
 void FunctionCallGraphBuilder::visitCallable(CallableDeclaration const* _callable)
@@ -192,9 +189,22 @@ void FunctionCallGraphBuilder::visitConstructor(
 
 	if (_contract.constructor())
 	{
-		m_graph->edges.emplace(m_currentNode, _contract.constructor());
+		add(m_currentNode, _contract.constructor());
 		_contract.constructor()->accept(*this);
 	}
+}
+
+bool FunctionCallGraphBuilder::add(Node _caller, ASTNode const* _callee)
+{
+	auto result = m_graph->edges.find(_caller);
+
+	if (result == m_graph->edges.end())
+	{
+		m_graph->edges.emplace(_caller, set{_callee});
+		return true;
+	}
+
+	return result->second.emplace(_callee).second;
 }
 
 }

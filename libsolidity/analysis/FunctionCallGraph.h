@@ -81,7 +81,7 @@ public:
 		/// Contract for which this is the graph
 		ContractDefinition const& contract;
 
-		std::multimap<Node, ASTNode const*, CompareByID> edges;
+		std::map<Node, std::set<ASTNode const*, ASTNode::CompareByID>, CompareByID> edges;
 
 		/// Set of contracts created
 		std::set<ContractDefinition const*, ASTNode::CompareByID> createdContracts;
@@ -93,7 +93,7 @@ private:
 	bool visit(Identifier const& _identifier) override;
 	bool visit(NewExpression const& _newExpression) override;
 	bool visit(MemberAccess const& _memberAccess) override;
-	bool visit(FunctionCall const& _functionCall) override;
+	void endVisit(FunctionCall const& _functionCall) override;
 
 	void visitCallable(CallableDeclaration const* _callable);
 	void visitConstructor(
@@ -102,6 +102,7 @@ private:
 		std::vector<ContractDefinition const*>::const_iterator _end
 	);
 
+	bool add(Node _caller, ASTNode const* _callee);
 
 	ContractDefinition const* m_contract = nullptr;
 	Node m_currentNode = SpecialNode::Unset;
