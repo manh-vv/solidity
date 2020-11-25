@@ -77,13 +77,10 @@ void collectCalls(FunctionCallGraphBuilder::ContractCallGraph const& _graph, AST
 		ASTNode const* function = *toVisit.begin();
 		toVisit.erase(toVisit.begin());
 
-		auto [begin, end] = _graph.edges.equal_range(function);
-		while (begin != end)
-		{
-			if (_functions.emplace(begin->second).second)
-				toVisit.emplace(begin->second);
-			begin++;
-		}
+		auto callees = _graph.edges.find(function);
+		for (auto callee: callees->second)
+			if (_functions.emplace(callee).second)
+				toVisit.emplace(callee);
 	}
 }
 
@@ -122,37 +119,32 @@ void IRGenerator::verifyCallGraph(FunctionCallGraphBuilder::ContractCallGraph co
 	set<ASTNode const*, ASTNode::CompareByID> functions;
 
 	{
-		auto [begin, end] =_graph.edges.equal_range(FunctionCallGraphBuilder::SpecialNode::CreationRoot);
+		auto callees = _graph.edges.find(FunctionCallGraphBuilder::SpecialNode::CreationRoot);
 
-		while (begin != end)
-		{
-			collectCalls(_graph, begin->second, functions);
-			begin++;
-		}
-	}
-
-	::verifyCallGraph(functions, m_creationFunctionList);
-
-	functions.clear();
-
-	for(auto& [hash, functionType]: _graph.contract.interfaceFunctionList())
-	{
-		collectCalls(_graph, &functionType->declaration(), functions);
-
-		auto [begin, end] =_graph.edges.equal_range(&functionType->declaration());
-
-		while (begin != end)
-		{
-			collectCalls(_graph, begin->second, functions);
-			begin++;
+		if (callees != _graph.edges.end())
+			for (auto callee: callees->second)
+				collectCalls(_graph, callee, functions);
 		}
 
+		::verifyCallGraph(functions, m_creationFunctionList);
+
+		functions.clear();
+
+		for(auto& [hash, functionType]: _graph.contract.interfaceFunctionList())
+		{
+			collectCalls(_graph, &functionType->declaration(), functions);
+
+			auto callees =_graph.edges.find(&functionType->declaration());
+
+			if (callees != _graph.edges.end())
+				for (auto callee: callees->second)
+					collectCalls(_graph, callee, functions);
+		}
+
+		::verifyCallGraph(functions, m_runtimeFunctionList);
 	}
 
-	::verifyCallGraph(functions, m_runtimeFunctionList);
-}
-
-string IRGenerator::generate(
+	string IRGenerator::generate(
 	ContractDefinition const& _contract,
 	map<ContractDefinition const*, string_view const> const& _otherYulSources
 )

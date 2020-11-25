@@ -168,7 +168,7 @@ void FunctionCallGraphBuilder::visitCallable(CallableDeclaration const* _callabl
 	m_currentNode = _callable;
 
 	if (nodeSet(previousNode))
-		m_graph->edges.emplace(previousNode, _callable);
+		add(previousNode, _callable);
 
 	_callable->accept(*this);
 
@@ -200,7 +200,7 @@ bool FunctionCallGraphBuilder::add(Node _caller, ASTNode const* _callee)
 
 	if (result == m_graph->edges.end())
 	{
-		m_graph->edges.emplace(_caller, set{_callee});
+		m_graph->edges.emplace(_caller, std::set<ASTNode const*, ASTNode::CompareByID>{_callee});
 		return true;
 	}
 
