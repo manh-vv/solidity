@@ -523,7 +523,12 @@ void IRGenerator::generateImplicitConstructors(ContractDefinition const& _contra
 			vector<string> params;
 			if (contract->constructor())
 			{
-				solUnimplementedAssert(contract->constructor()->modifiers().empty(), "Modifiers not implemented yet.");
+				for (auto const& modifierInvocation: contract->constructor()->modifiers())
+					// This can be ContractDefinition too for super arguments. That is supported.
+					solUnimplementedAssert(
+						!dynamic_cast<ModifierDefinition const*>(modifierInvocation->name()->annotation().referencedDeclaration),
+						"Modifiers not implemented yet."
+					);
 				for (ASTPointer<VariableDeclaration> const& varDecl: contract->constructor()->parameters())
 					params += m_context.addLocalVariable(*varDecl).stackSlots();
 			}
