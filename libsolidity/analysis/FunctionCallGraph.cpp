@@ -154,9 +154,9 @@ bool FunctionCallGraphBuilder::visit(MemberAccess const& _memberAccess)
 
 void FunctionCallGraphBuilder::endVisit(FunctionCall const& _functionCall)
 {
-	auto& functionType = dynamic_cast<FunctionType const&>(*_functionCall.expression().annotation().type);
+	auto* functionType = dynamic_cast<FunctionType const*>(_functionCall.expression().annotation().type);
 
-	if (!functionType.hasDeclaration())
+	if (functionType && !functionType->hasDeclaration())
 		add(m_currentDispatch, &_functionCall);
 }
 
@@ -187,6 +187,9 @@ void FunctionCallGraphBuilder::visitConstructor(
 	for (auto const* stateVar: _contract.stateVariables())
 		stateVar->accept(*this);
 
+	for (auto arg: _contract.baseContracts())
+		arg->accept(*this);
+
 	if (_contract.constructor())
 	{
 		add(m_currentNode, _contract.constructor());
@@ -196,6 +199,7 @@ void FunctionCallGraphBuilder::visitConstructor(
 
 bool FunctionCallGraphBuilder::add(Node _caller, ASTNode const* _callee)
 {
+	solAssert(_callee != nullptr, "");
 	auto result = m_graph->edges.find(_caller);
 
 	if (result == m_graph->edges.end())

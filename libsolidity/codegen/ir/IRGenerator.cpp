@@ -78,7 +78,10 @@ void collectCalls(FunctionCallGraphBuilder::ContractCallGraph const& _graph, AST
 		toVisit.erase(toVisit.begin());
 
 		auto callees = _graph.edges.find(function);
-		for (auto callee: callees->second)
+		if (callees == _graph.edges.end())
+			continue;
+
+		for (auto& callee: callees->second)
 			if (_functions.emplace(callee).second)
 				toVisit.emplace(callee);
 	}
