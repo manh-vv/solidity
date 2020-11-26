@@ -4496,13 +4496,9 @@ BOOST_AUTO_TEST_CASE(no_nonpayable_circumvention_by_modifier)
 			}
 		}
 	)";
-	ALSO_VIA_YUL(
-		DISABLE_EWASM_TESTRUN()
-
-		compileAndRun(sourceCode);
-		ABI_CHECK(callContractFunctionWithValue("f()", 27), encodeArgs());
-		BOOST_CHECK_EQUAL(balanceAt(m_contractAddress), 0);
-	)
+	compileAndRun(sourceCode);
+	ABI_CHECK(callContractFunctionWithValue("f()", 27), encodeArgs());
+	BOOST_CHECK_EQUAL(balanceAt(m_contractAddress), 0);
 }
 
 BOOST_AUTO_TEST_CASE(mem_resize_is_not_paid_at_call)
