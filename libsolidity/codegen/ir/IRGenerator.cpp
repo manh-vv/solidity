@@ -249,6 +249,7 @@ string IRGenerator::generateFunction(FunctionDefinition const& _function)
 {
 	string functionName = IRNames::function(_function);
 	return m_context.functionCollector().createFunction(functionName, [&]() {
+		solUnimplementedAssert(_function.modifiers().empty(), "Modifiers not implemented yet.");
 		Whiskers t(R"(
 			function <functionName>(<params>)<?+retParams> -> <retParams></+retParams> {
 				<initReturnVariables>
@@ -521,8 +522,11 @@ void IRGenerator::generateImplicitConstructors(ContractDefinition const& _contra
 			)");
 			vector<string> params;
 			if (contract->constructor())
+			{
+				solUnimplementedAssert(contract->constructor()->modifiers().empty(), "Modifiers not implemented yet.");
 				for (ASTPointer<VariableDeclaration> const& varDecl: contract->constructor()->parameters())
 					params += m_context.addLocalVariable(*varDecl).stackSlots();
+			}
 			t("params", joinHumanReadable(params));
 			vector<string> baseParams = listAllParams(baseConstructorParams);
 			t("baseParams", joinHumanReadable(baseParams));
